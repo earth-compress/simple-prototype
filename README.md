@@ -20,6 +20,12 @@ Run the linter with:
 uv run ruff check
 ```
 
+Run fixes highlighted by the linter with:
+
+```bash
+uv run ruff check --fix
+```
+
 Run the formatter with:
 ```bash
 uv run ruff format
