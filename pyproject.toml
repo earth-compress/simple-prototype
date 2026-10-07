@@ -1,0 +1,17 @@
+[project]
+name = "ec-prototype"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Matt McCormack", email = "matcor@noc.ac.uk" }
+]
+requires-python = ">=3.13"
+dependencies = []
+
+[project.scripts]
+hello = "ec_prototype:main"
+
+[build-system]
+requires = ["uv_build>=0.12.23,<0.13.0"]
+build-backend = "uv_build"
