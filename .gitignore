@@ -8,3 +8,10 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Generally ignored stuff
+.DS_Store
+
+# Generated outputs
+outputs
+data

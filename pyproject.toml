@@ -7,7 +7,13 @@ authors = [
     { name = "Matt McCormack", email = "matcor@noc.ac.uk" }
 ]
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "clouds-decoded",
+    "humanize>=4.16.0",
+    "pydantic>=2.13.5",
+    "tqdm>=4.70.1",
+    "transformers<5.9",
+]
 
 [project.scripts]
 hello = "ec_prototype:main"
@@ -18,3 +24,6 @@ build-backend = "uv_build"
 
 [dependency-groups]
 dev = [ "ruff>=0.16.10"]
+
+[tool.uv.sources]
+clouds-decoded = { git = "https://github.com/asterisk-labs/clouds-decoded.git" }
