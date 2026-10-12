@@ -1,6 +1,6 @@
-"""Application entry point."""
+# """Application entry point."""
 
 
 def main() -> None:
-    """Basic main function."""
+    """Basic main function"""
     print("Hello from ec-prototype!")
