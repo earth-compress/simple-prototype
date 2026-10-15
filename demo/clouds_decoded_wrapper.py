@@ -1,7 +1,6 @@
 from pathlib import Path
 
 import matplotlib.pyplot as plt
-import numpy as np
 from clouds_decoded.assets import download_asset
 from clouds_decoded.data import Sentinel2Scene
 from clouds_decoded.modules.albedo_estimator.config import AlbedoEstimatorConfig
@@ -17,8 +16,6 @@ from clouds_decoded.modules.refl2prop.processor import CloudPropertyInverter
 from clouds_decoded.modules.refocus.config import RefocusConfig
 from clouds_decoded.modules.refocus.processor import RefocusProcessor
 from clouds_decoded.visualisation import Visualiser
-from clouds_decoded.visualisation.layers import _apply_rgb_config, rgb_config_from_data
-from clouds_decoded.visualisation.static import _inset_title
 
 
 def _run_cloud_mask(output_path: Path, sentinel_scene, device: str | None = None):
@@ -55,35 +52,6 @@ def _run_refocus(scene, height_data, output_path: Path):
     refocussed_scene = refocus_processor.process(scene, height_data=height_data)
     return refocussed_scene
 
-def a_b_comparison(scene, refocused_scene):
-    # ── Crop window (row_start, row_end, col_start, col_end) in B02 10 m pixels ──
-    # Adjust these to centre on an area with cloud edges.
-    r0, r1, c0, c1 = 5500, 7000, 0, 1500
-
-    # Extract RGB bands for the crop from both scenes
-    def _crop_rgb(sc, r0, r1, c0, c1):
-        r = sc.get_band("B04", reflectance=True)[r0:r1, c0:c1]
-        g = sc.get_band("B03", reflectance=True)[r0:r1, c0:c1]
-        b = sc.get_band("B02", reflectance=True)[r0:r1, c0:c1]
-        return np.stack([r, g, b], axis=-1).astype(np.float32)
-
-    rgb_before = _crop_rgb(scene, r0, r1, c0, c1)
-    rgb_after  = _crop_rgb(refocused_scene, r0, r1, c0, c1)
-
-    # Shared contrast stretch so both panels are comparable
-    cfg = rgb_config_from_data(rgb_before)
-    rgb_before = _apply_rgb_config(rgb_before, cfg)
-    rgb_after  = _apply_rgb_config(rgb_after, cfg)
-
-    # A/B plot
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 7))
-    ax1.imshow(rgb_before); ax1.set_xticks([]); ax1.set_yticks([])
-    ax2.imshow(rgb_after);  ax2.set_xticks([]); ax2.set_yticks([])
-    _inset_title(ax1, "Before refocus")
-    _inset_title(ax2, "After refocus")
-    fig.tight_layout(pad=0.5)
-    # plt.show()
-
 def _cloud_props(output_path: Path, refocused_scene, height_result, albedo_result):
     props_config = ShadingRefl2PropConfig(output_dir=str(output_path))
     props_processor = CloudPropertyInverter(props_config)
@@ -111,7 +79,6 @@ def run_clouds_decoded(output_path: Path, scene_path: Path, device: str | None =
     albedo_result = _run_albedo(output_path=output_path, mask_result=mask_result, sentinel_scene=scene)
     refocused_scene = _run_refocus(scene=scene, height_data=height_result, output_path=output_path)
 
-    # a_b_comparison(scene=scene, refocused_scene=refocused_scene)
     _cloud_props(output_path=output_path, refocused_scene=refocused_scene, height_result=height_result, albedo_result=albedo_result)
 
 def clouds_decoded_visualise(output_path: Path, scene_path: Path):
