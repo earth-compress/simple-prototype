@@ -1,4 +1,5 @@
 """Code for running the Clouds Decoded-based demo."""
+
 import os
 from collections.abc import Callable
 from enum import StrEnum
@@ -13,13 +14,16 @@ from pydantic import BaseModel
 
 class DatasetVersion(BaseModel):
     """Model to hold information on each compression-level version of the datasets."""
+
     download_method: Callable[[], Path]
     description: str
 
 
 class DatasetKey(StrEnum):
     """Enum holding keys for each of the dataset versions."""
+
     ORIGINAL = "original"
+
 
 DATASET_VERSIONS: dict[DatasetKey, DatasetVersion] = {
     DatasetKey.ORIGINAL: DatasetVersion(
