@@ -193,7 +193,7 @@ wheels = [
 [[package]]
 name = "clouds-decoded"
 version = "0.1.0"
-source = { git = "https://github.com/asterisk-labs/clouds-decoded.git#89c94fc02d2520d78c4837a8c2c2c71fe18ac97e" }
+source = { git = "https://github.com/asterisk-labs/clouds-decoded.git?branch=compressed-readers#3c3ff75bb11f6abfc95316fc5f7459d3621e65e6" }
 dependencies = [
     { name = "duckdb" },
     { name = "matplotlib" },
@@ -434,6 +434,11 @@ wheels = [
 name = "ec-prototype"
 version = "0.1.0"
 source = { editable = "." }
+dependencies = [
+    { name = "huggingface-hub" },
+    { name = "humanize" },
+    { name = "pydantic" },
+]
 
 [package.dev-dependencies]
 demo = [
@@ -450,10 +455,15 @@ dev = [
 ]
 
 [package.metadata]
+requires-dist = [
+    { name = "huggingface-hub", specifier = ">=1.33.0" },
+    { name = "humanize", specifier = ">=4.16.0" },
+    { name = "pydantic", specifier = ">=2.14.1" },
+]
 
 [package.metadata.requires-dev]
 demo = [
-    { name = "clouds-decoded", git = "https://github.com/asterisk-labs/clouds-decoded.git" },
+    { name = "clouds-decoded", git = "https://github.com/asterisk-labs/clouds-decoded.git?branch=compressed-readers" },
     { name = "humanize", specifier = ">=4.16.0" },
     { name = "ipykernel", specifier = ">=7.4.0" },
     { name = "ipywidgets", specifier = ">=8.1.9" },

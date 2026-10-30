@@ -7,7 +7,11 @@ authors = [
     { name = "Matt McCormack", email = "matcor@noc.ac.uk" }
 ]
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "huggingface-hub>=1.33.0",
+    "humanize>=4.16.0",
+    "pydantic>=2.14.1",
+]
 
 [project.scripts]
 hello = "ec_prototype:main"
@@ -29,4 +33,4 @@ demo = [
 dev = [ "ruff>=0.16.10"]
 
 [tool.uv.sources]
-clouds-decoded = { git = "https://github.com/asterisk-labs/clouds-decoded.git" }
+clouds-decoded = { git = "https://github.com/asterisk-labs/clouds-decoded.git", branch = "compressed-readers" }
