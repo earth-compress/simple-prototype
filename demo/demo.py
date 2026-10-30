@@ -110,7 +110,7 @@ def run(dataset_version: DatasetKey):
 
     print("#########")
     print(f"Download size: {humanize.naturalsize(download_size)}")
-    print(f"Processing done in {humanize.precisedelta(time_taken)}")
+    print(f"Download completed in {humanize.precisedelta(time_taken)}")
     print(f"Saved to: {scene_path}")
 
 
