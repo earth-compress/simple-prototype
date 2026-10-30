@@ -72,20 +72,29 @@ def _cloud_props(output_path: Path, refocused_scene, height_result, albedo_resul
     print(f"Bands: {props_result.metadata.band_names}")
 
 
-def run_clouds_decoded(output_path: Path, scene_path: Path, device: str | None = None):
+def run_clouds_decoded(
+    output_path: Path, scene_path: Path, device: str | None = None, compression_level: str | None = None
+):
     """Run the Clouds Decoded module against a Sentinel-2 scene.
 
     Args:
         output_path (Path): Directory where the results are saved.
         scene_path (Path): Path to the input scene.
         device (str | None, optional): Compute device, ('cuda', 'cpu', 'mps', or None=auto).
+        compression_level (str | None): Compressed dataset quality level.
     """
     # Download model weights
     download_asset("cloud_mask")
     download_asset("emulator")
     download_asset("refl2prop")
     scene = Sentinel2Scene()
-    scene.read(scene_path)
+    scene.read(scene_path, level=compression_level)
+
+    print(f"Scene loaded: {scene_path}")
+
+    if compression_level is not None:
+        print(f"Compression level: {compression_level}")
+        print(f"Compression details: {scene.compression}")
 
     mask_result = _run_cloud_mask(output_path, scene, device)
     height_result = _run_cloud_height(mask_result, scene, output_path, device)

@@ -52,7 +52,7 @@ def download_dataset(dataset_version: DatasetKey) -> Path:
     scene_path = DATA_DIR / relative_path
 
     if not (scene_path / "COMPRESSED.json").is_file():
-        raise FileNotFoundError(f"Compressed SAFE product not found: {scene_path}")
+        raise FileNotFoundError(f"Compressed SAFE file not found: {scene_path}")
 
     return scene_path
 
