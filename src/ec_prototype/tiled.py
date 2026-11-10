@@ -51,9 +51,7 @@ from affine import Affine
 from rasterio.crs import CRS
 from rasterio.windows import Window
 
-from ..band_source import BandGeoref, BandSource, read_manifest, require_optional, resolve_level
-from ...constants import BANDS
-# from .shell import make_shell, write_manifest
+from ec_prototype.band_source import BandGeoref, BandSource, require_optional
 
 CODECS = ("sz3", "jpegxl")
 LAYOUTS = ("separate", "grouped")
