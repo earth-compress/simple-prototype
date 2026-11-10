@@ -6,8 +6,11 @@ from enum import StrEnum
 from pathlib import Path
 
 import georvq
+import numpy as np
 from huggingface_hub import snapshot_download
 from pydantic import BaseModel
+
+from ec_prototype.band_source import open_band_source
 
 REPO_ID = "earth-compress/EC-prototype-S2L1C"
 
@@ -33,7 +36,7 @@ class BaseDataset(BaseModel, abc.ABC):
         pass
 
     @abc.abstractmethod
-    def decode(self, device: str | None = None):
+    def decode(self, device: str | None = None, quality: str | None = None):
         pass
 
 class GeorvqDataset(BaseDataset):
@@ -52,16 +55,25 @@ class JpegxlDataset(BaseDataset):
     def download(self):
         self.path = download_dataset(DatasetKey.JPEGXL)
 
-    def decode(self):
-        pass
+    def decode(self, device: str | None = None, quality: str | None = None):
+        if not self.path:
+            raise Exception("No path set, call download() on the dataset first!")
+        _bands, _grids = decode_tiled(self.path, level=quality)
+        self.bands = _bands
+        return _grids
 
 
 class Sz3Dataset(BaseDataset):
     def download(self):
         self.path = download_dataset(DatasetKey.SZ3)
 
-    def decode(self):
-        pass
+    def decode(self, device: str | None = None, quality: str | None = None):
+        if not self.path:
+            raise Exception("No path set, call download() on the dataset first!")
+        _bands, _grids = decode_tiled(self.path, level=quality)
+        self.bands = _bands
+        return _grids
+
 
 def download_dataset(dataset_version: DatasetKey) -> Path:
     """Download a compressed Sentinel-2 SAFE product.
@@ -97,6 +109,29 @@ def decode_georvq(scene_path: Path, device: str | None = None, quality: str | No
         bf16=bool(manifest.get("bf16", False))
     )
     return ds.descriptions, ds.read_grids(quality=quality)
+
+
+def decode_tiled(scene_path: Path, level: str | None = None) -> tuple[tuple, dict]:
+    """Decode a JPEG XL or SZ3 compressed Sentinel-2 SAFE file."""
+    source = open_band_source(scene_path, level=level)
+
+    if source.name not in ("jpegxl", "sz3"):
+        raise ValueError(f"Expected jpegxl or sz3, got {source.name}")
+
+    bands = tuple(source.bands)
+    decoded = source.read(list(bands))
+
+    grids = {}
+    for resolution in (10, 20, 60):
+        resolution_bands = [band for band in bands if source.native_resolution(band) == resolution]
+
+        if not resolution_bands:
+            continue
+
+        # Format the array for plotting outputs in the Jupyter notebook.
+        grids[f"{resolution}m"] = np.stack([decoded[band] for band in resolution_bands], axis=0)
+
+    return bands, grids
 
 
 DATASETS: dict[DatasetKey, BaseDataset] = {
