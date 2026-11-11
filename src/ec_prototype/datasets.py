@@ -46,7 +46,7 @@ class GeorvqDataset(BaseDataset):
     def decode(self, device: str | None = None, quality: str | None = None):
         if not self.path:
             raise Exception("No path set, call download() on the dataset first!")
-        _bands, _grids = decode_georvq(self.path, device=device)
+        _bands, _grids = decode_georvq(self.path, device=device, quality=quality)
         self.bands = _bands
         return _grids
 
