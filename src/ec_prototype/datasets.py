@@ -4,6 +4,7 @@ import abc
 import json
 from enum import StrEnum
 from pathlib import Path
+from typing import Any
 
 import georvq
 from huggingface_hub import snapshot_download
@@ -32,12 +33,12 @@ class BaseDataset(BaseModel, abc.ABC):
     bands: tuple | None = None
 
     @abc.abstractmethod
-    def download(self):
-        """Method to download the dataset."""
+    def download(self) -> Path:
+        """Method to download the dataset. Returns the path of the downloaded asset."""
         pass
 
     @abc.abstractmethod
-    def decode(self, device: str | None = None):
+    def decode(self, device: str | None = None, **kwargs) -> Any:
         """Method to decode the dataset."""
         pass
 
@@ -48,6 +49,7 @@ class GeorvqDataset(BaseDataset):
     def download(self):
         """Download the GEORVQ dataset."""
         self.path = download_dataset(DatasetKey.GEORVQ)
+        return self.path
 
     def decode(self, device: str | None = None, quality: str | None = None):
         """Decode the dataset.
