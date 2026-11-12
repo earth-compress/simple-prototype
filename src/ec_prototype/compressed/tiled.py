@@ -3,38 +3,8 @@
 Adapted from Clouds Decoded: https://github.com/asterisk-labs/clouds-decoded
 https://github.com/asterisk-labs/clouds-decoded/blob/compressed-readers/src/shared_utils/data/compressed/tiled.py
 
-The decode functionality has been copied to use in this demo.
+The decode functionality has been used in this demo.
 
-A product holds one or more levels of one codec, each in
-``IMG_DATA/<level>/`` with its own codec parameters, listed in the
-manifest's ``levels``. Each band's native grid is cut into square tiles (``tile`` B02 pixels on
-a side, the same ground area at every resolution) and every tile is coded
-on its own, so a crop window decodes only the tiles it touches. Bands of
-one resolution group share a file, ``IMG_DATA/<level>/<group>.bin``, a plain
-concatenation of coded blobs located by the manifest's index.
-
-Layouts:
-
-- ``separate``: each band's tile is one 2-D blob (SZ3 or JPEG XL).
-- ``grouped``: the tile of every band of a resolution group is one 3-D
-  ``(bands, rows, cols)`` SZ3 blob, so SZ3 also predicts across bands.
-  Asking for one band of a group decodes all of them.
-
-Groups are the bands sharing a native grid (10 m, 20 m, 60 m; on newer
-processing baselines B01 lands with the 20 m bands).
-
-Nodata (DN 0) does not survive lossy coding, so each tile of a band
-holding any also stores its zero mask, packed bits deflated, and the
-reader puts the zeros back. Before coding, a tile's zeros are filled with
-the mean of its valid pixels so the edge costs no bits, and decoded valid
-pixels are clipped to at least 1 DN.
-
-Codec parameters, as in ``imagecodecs``:
-
-- ``sz3``: ``abs``, the absolute error bound in DN (bands are coded as
-  float32 and rounded back to uint16).
-- ``jpegxl``: ``distance`` (Butteraugli distance; 0 codes losslessly) and
-  ``effort`` (1-10, default 7).
 """
 
 from __future__ import annotations

@@ -3,35 +3,8 @@
 Adapted from Clouds Decoded: https://github.com/asterisk-labs/clouds-decoded
 https://github.com/asterisk-labs/clouds-decoded/blob/compressed-readers/src/shared_utils/data/band_source.py
 
-The decode functionality has been copied to use in this demo.
+The decode functionality has been used in this demo.
 
-A ``Sentinel2Scene`` reads its metadata (``MTD_MSIL1C.xml``, ``MTD_TL.xml``,
-``QI_DATA``, ``AUX_DATA``) from the ``.SAFE`` directory and its band images
-through a ``BandSource``. For a standard product that is ``Jp2BandSource``,
-the 13 JPEG 2000 images in ``IMG_DATA``. A *compressed* product is a
-``.SAFE`` directory with the same metadata but with its band images
-replaced by another representation, described by a ``COMPRESSED.json``
-manifest at the product root; the manifest's ``reader`` names the
-``BandSource`` that decodes it.
-
-A compressed product can hold several *levels* (rates) of the same
-codec, e.g. georvq rungs 8-8, 8-4 and 8-0 read from one store, or SZ3 at
-several error bounds. The manifest then lists them under ``levels``, each
-entry holding the fields that differ between levels, and names a
-``default``; the level to read is chosen with ``Sentinel2Scene.read(...,
-level=...)`` (``--compression-level`` on the CLI, ``compression_level``
-in a project).
-
-Bands are decoded in *groups*. A JPEG 2000 band is its own group, but a
-representation that codes several bands jointly (georvq codes all 13
-together; SZ3 can code each resolution's bands as one stack) has to be
-decoded a group at a time, so asking for one band of a group decodes the
-whole group, and the others come with it.
-
-The readers for compressed products need packages that are not
-clouds-decoded dependencies (``georvq``, ``imagecodecs``). They are
-imported only when a product that needs them is read, and a missing one
-raises an ``ImportError`` that says what to install.
 """
 
 from __future__ import annotations
@@ -45,7 +18,6 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
-import rasterio as rio
 from affine import Affine
 from rasterio.windows import Window
 
@@ -220,72 +192,6 @@ class BandSource(ABC):
         return {"reader": self.name}
 
 
-class Jp2BandSource(BandSource):
-    """The JPEG 2000 band images of a standard ``.SAFE`` product."""
-
-    name = "jp2"
-
-    def __init__(self, scene_directory: Path, locate):
-        """Initialisation method.
-
-        Args:
-            scene_directory: The ``.SAFE`` directory.
-            locate: Callable ``(bands) -> {band: path}`` finding band images;
-                images are located only when first needed, so a product
-                missing some bands can still be read for the others.
-        """
-        self.scene_directory = Path(scene_directory)
-        self._locate = locate
-        self._paths: dict[str, Path] = {}
-        self._georef: BandGeoref | None = None
-        self._shapes: dict[str, tuple[int, int]] = {}
-        self._res: dict[str, int] = {}
-
-    @property
-    def groups(self) -> dict[str, list[str]]:
-        """Decode units: group name -> the bands decoded together."""
-        return {b: [b] for b in BANDS}
-
-    def path(self, band: str) -> Path:
-        """Retrieve the path."""
-        if band not in self._paths:
-            self._paths.update(self._locate([band]))
-        return self._paths[band]
-
-    def _open_meta(self, band: str) -> None:
-        with rio.open(self.path(band)) as src:
-            self._shapes[band] = (src.height, src.width)
-            # the actual pixel size of the jp2, not the nominal one
-            self._res[band] = round(abs(src.transform.a))
-            if band == "B02":
-                self._georef = BandGeoref(src.crs, src.transform, src.width, src.height)
-
-    def georef(self) -> BandGeoref:
-        """CRS, transform and size of the full product's B02 grid."""
-        if self._georef is None:
-            self._open_meta("B02")
-        return self._georef
-
-    def shape(self, band: str) -> tuple[int, int]:
-        """``(height, width)`` of a band's full native grid."""
-        if band not in self._shapes:
-            self._open_meta(band)
-        return self._shapes[band]
-
-    def native_resolution(self, band: str) -> int:
-        """Actual pixel size of a band in metres, from its grid size."""
-        if band not in self._res:
-            self._open_meta(band)
-        return self._res[band]
-
-    def _read_group(self, group: str, windows: dict[str, Window | None]) -> dict[str, np.ndarray]:
-        (band,) = self.groups[group]
-        with rio.open(self.path(band)) as src:
-            self._shapes[band] = (src.height, src.width)
-            self._res[band] = round(abs(src.transform.a))
-            return {band: src.read(1, window=windows[band])}
-
-
 def read_manifest(scene_directory: Path) -> dict[str, Any] | None:
     """The product's ``COMPRESSED.json``, or ``None`` for a standard product.
 
@@ -362,9 +268,7 @@ def open_band_source(scene_directory: Path, band_paths=None, level: str | None =
     scene_directory = Path(scene_directory)
     manifest = read_manifest(scene_directory)
     if manifest is None:
-        if level is not None:
-            raise ValueError(f"{scene_directory.name} is not a compressed product; it has no level '{level}'")
-        return Jp2BandSource(scene_directory, band_paths)
+        raise FileNotFoundError(f"Compressed SAFE manifest not found: {scene_directory / MANIFEST_NAME}")
     manifest = resolve_level(manifest, level)
     reader = manifest.get("reader")
     if reader not in READERS:
