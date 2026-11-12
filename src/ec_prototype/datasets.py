@@ -15,6 +15,7 @@ SAMPLE_NAME = "S2A_MSIL1C_20170720T045701_N0500_R119_T44PNB_20230831T180106.SAFE
 
 DATA_DIR = Path("data")
 
+
 class DatasetKey(StrEnum):
     """Enum holding keys for each of the dataset versions."""
 
@@ -24,44 +25,61 @@ class DatasetKey(StrEnum):
 
 
 class BaseDataset(BaseModel, abc.ABC):
+    """Abstract base class for Datasets."""
+
     description: str
     path: Path | None = None
     bands: tuple | None = None
 
     @abc.abstractmethod
     def download(self):
+        """Method to download the dataset."""
         pass
 
     @abc.abstractmethod
     def decode(self, device: str | None = None):
+        """Method to decode the dataset."""
         pass
 
+
 class GeorvqDataset(BaseDataset):
+    """Class for GEORVQ Compressed datasets."""
+
     def download(self):
+        """Download the GEORVQ dataset."""
         self.path = download_dataset(DatasetKey.GEORVQ)
 
     def decode(self, device: str | None = None, quality: str | None = None):
+        """Decode the dataset.
+
+        Args:
+            device (str | None, optional): Compute device, ('cuda', 'cpu', 'mps', or None=auto).
+            quality (str | None, optional): Quality level to decompress to, e.g. "8-4".
+                                            Will use codec's default if not provided.
+        """
         if not self.path:
             raise Exception("No path set, call download() on the dataset first!")
-        _bands, _grids = decode_georvq(self.path, device=device, quality=quality)
-        self.bands = _bands
-        return _grids
+        manifest = json.loads((self.path / "COMPRESSED.json").read_text())
+        ds = georvq.open(self.path / manifest["store"], device=device, bf16=bool(manifest.get("bf16", False)))
+        self.bands = ds.descriptions
+        return ds.read_grids(quality=quality)
 
 
-class JpegxlDataset(BaseDataset):
-    def download(self):
-        self.path = download_dataset(DatasetKey.JPEGXL)
+# class JpegxlDataset(BaseDataset):
+#     def download(self):
+#         self.path = download_dataset(DatasetKey.JPEGXL)
 
-    def decode(self):
-        pass
+#     def decode(self):
+#         pass
 
 
-class Sz3Dataset(BaseDataset):
-    def download(self):
-        self.path = download_dataset(DatasetKey.SZ3)
+# class Sz3Dataset(BaseDataset):
+#     def download(self):
+#         self.path = download_dataset(DatasetKey.SZ3)
 
-    def decode(self):
-        pass
+#     def decode(self):
+#         pass
+
 
 def download_dataset(dataset_version: DatasetKey) -> Path:
     """Download a compressed Sentinel-2 SAFE product.
@@ -89,24 +107,14 @@ def download_dataset(dataset_version: DatasetKey) -> Path:
     return scene_path
 
 
-def decode_georvq(scene_path: Path, device: str | None = None, quality: str | None = None) -> tuple[tuple, dict]:
-    manifest = json.loads((scene_path / "COMPRESSED.json").read_text())
-    ds = georvq.open(
-        scene_path / manifest["store"],
-        device=device,
-        bf16=bool(manifest.get("bf16", False))
-    )
-    return ds.descriptions, ds.read_grids(quality=quality)
-
-
 DATASETS: dict[DatasetKey, BaseDataset] = {
     DatasetKey.GEORVQ: GeorvqDataset(
         description="GeoRVQ compressed Sentinel-2 data",
     ),
-    DatasetKey.JPEGXL: JpegxlDataset(
-        description="JPEG XL compressed Sentinel-2 data"
-    ),
-    DatasetKey.SZ3: Sz3Dataset(
-        description="SZ3 compressed Sentinel-2 data",
-    )
+    # DatasetKey.JPEGXL: JpegxlDataset(
+    #     description="JPEG XL compressed Sentinel-2 data"
+    # ),
+    # DatasetKey.SZ3: Sz3Dataset(
+    #     description="SZ3 compressed Sentinel-2 data",
+    # )
 }
