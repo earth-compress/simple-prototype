@@ -31,8 +31,8 @@ MANIFEST_VERSION = 2  # 2 adds levels; version 1 manifests (one level) still rea
 
 # reader name in a manifest -> "module:class", imported on first use
 READERS: dict[str, str] = {
-    "sz3": "ec_prototype.tiled:TiledBandSource",
-    "jpegxl": "ec_prototype.tiled:TiledBandSource",
+    "sz3": "ec_prototype.compressed.tiled:TiledBandSource",
+    "jpegxl": "ec_prototype.compressed.tiled:TiledBandSource",
 }
 
 
