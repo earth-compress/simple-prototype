@@ -1,6 +1,9 @@
 """Where a scene's band images come from.
 
-This code is using: https://github.com/asterisk-labs/clouds-decoded/blob/compressed-readers/src/shared_utils/data/band_source.py
+Adapted from Clouds Decoded: https://github.com/asterisk-labs/clouds-decoded
+https://github.com/asterisk-labs/clouds-decoded/blob/compressed-readers/src/shared_utils/data/band_source.py
+
+The decode functionality has been copied to use in this demo.
 
 A ``Sentinel2Scene`` reads its metadata (``MTD_MSIL1C.xml``, ``MTD_TL.xml``,
 ``QI_DATA``, ``AUX_DATA``) from the ``.SAFE`` directory and its band images

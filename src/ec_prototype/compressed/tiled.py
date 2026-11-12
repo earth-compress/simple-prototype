@@ -1,7 +1,9 @@
 """Tiled SZ3 / JPEG XL band data as a band source.
 
-This code is using: https://github.com/asterisk-labs/clouds-decoded/blob/compressed-readers/src/shared_utils/data/compressed/tiled.py
+Adapted from Clouds Decoded: https://github.com/asterisk-labs/clouds-decoded
+https://github.com/asterisk-labs/clouds-decoded/blob/compressed-readers/src/shared_utils/data/compressed/tiled.py
 
+The decode functionality has been copied to use in this demo.
 
 A product holds one or more levels of one codec, each in
 ``IMG_DATA/<level>/`` with its own codec parameters, listed in the
@@ -49,7 +51,7 @@ from affine import Affine
 from rasterio.crs import CRS
 from rasterio.windows import Window
 
-from ec_prototype.band_source import BandGeoref, BandSource, require_optional
+from ec_prototype.compressed.band_source import BandGeoref, BandSource, require_optional
 
 CODECS = ("sz3", "jpegxl")
 LAYOUTS = ("separate", "grouped")

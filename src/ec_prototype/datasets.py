@@ -10,7 +10,7 @@ import numpy as np
 from huggingface_hub import snapshot_download
 from pydantic import BaseModel
 
-from ec_prototype.band_source import open_band_source
+from ec_prototype.compressed.band_source import open_band_source
 
 REPO_ID = "earth-compress/EC-prototype-S2L1C"
 
