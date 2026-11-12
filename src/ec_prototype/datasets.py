@@ -120,7 +120,7 @@ def decode_georvq(scene_path: Path, device: str | None = None, quality: str | No
 
 
 def decode_tiled(scene_path: Path, level: str | None = None) -> tuple[tuple, dict]:
-    """Decode a JPEG XL or SZ3 compressed Sentinel-2 SAFE file.
+    """Decode a JPEG XL compressed Sentinel-2 SAFE file.
 
     Args:
         scene_path (Path): Path to the compressed Sentinel-2 SAFE directory.
@@ -131,8 +131,8 @@ def decode_tiled(scene_path: Path, level: str | None = None) -> tuple[tuple, dic
     """
     source = open_band_source(scene_path, level=level)
 
-    if source.name not in ("jpegxl", "sz3"):
-        raise ValueError(f"Expected jpegxl or sz3, got {source.name}")
+    if source.name not in ("jpegxl"):
+        raise ValueError(f"Expected jpegxl got {source.name}")
 
     bands = tuple(source.bands)
     decoded = source.read(list(bands))
