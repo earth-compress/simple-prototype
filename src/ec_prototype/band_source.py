@@ -38,13 +38,12 @@ import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 import rasterio as rio
 from affine import Affine
 from rasterio.windows import Window
-
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +57,7 @@ MANIFEST_FORMAT = "clouds-decoded-compressed"
 MANIFEST_VERSION = 2  # 2 adds levels; version 1 manifests (one level) still read
 
 # reader name in a manifest -> "module:class", imported on first use
-READERS: Dict[str, str] = {
+READERS: dict[str, str] = {
     "sz3": "ec_prototype.tiled:TiledBandSource",
     "jpegxl": "ec_prototype.tiled:TiledBandSource",
 }
@@ -74,7 +73,7 @@ class BandGeoref:
     height: int
 
     @property
-    def bounds(self) -> Tuple[float, float, float, float]:
+    def bounds(self) -> tuple[float, float, float, float]:
         """``(left, bottom, right, top)`` in CRS units."""
         left, top = self.transform * (0, 0)
         right, bottom = self.transform * (self.width, self.height)
@@ -147,7 +146,7 @@ class BandSource(ABC):
 
     @property
     @abstractmethod
-    def groups(self) -> Dict[str, List[str]]:
+    def groups(self) -> dict[str, list[str]]:
         """Decode units: group name -> the bands decoded together."""
 
     @abstractmethod
@@ -155,11 +154,11 @@ class BandSource(ABC):
         """CRS, transform and size of the full product's B02 grid."""
 
     @abstractmethod
-    def shape(self, band: str) -> Tuple[int, int]:
+    def shape(self, band: str) -> tuple[int, int]:
         """``(height, width)`` of a band's full native grid."""
 
     @abstractmethod
-    def _read_group(self, group: str, windows: Dict[str, Optional[Window]]) -> Dict[str, np.ndarray]:
+    def _read_group(self, group: str, windows: dict[str, Window | None]) -> dict[str, np.ndarray]:
         """Decode one group.
 
         Args:
@@ -173,7 +172,7 @@ class BandSource(ABC):
         """
 
     @property
-    def bands(self) -> List[str]:
+    def bands(self) -> list[str]:
         """All bands the source holds, in canonical order."""
         held = {b for members in self.groups.values() for b in members}
         return [b for b in BANDS if b in held]
@@ -183,7 +182,7 @@ class BandSource(ABC):
         ref = self.georef()
         return round(abs(ref.transform.a) * ref.width / self.shape(band)[1])
 
-    def window(self, band: str, crop_window: Optional[tuple]) -> Optional[Window]:
+    def window(self, band: str, crop_window: tuple | None) -> Window | None:
         """A B02-pixel crop window on a band's native grid (``None`` for none)."""
         if not crop_window:
             return None
@@ -191,7 +190,7 @@ class BandSource(ABC):
         h, w = self.shape(band)
         return scale_crop_window(crop_window, ref.width, ref.height, w, h)
 
-    def read(self, bands: List[str], crop_window: Optional[tuple] = None) -> Dict[str, np.ndarray]:
+    def read(self, bands: list[str], crop_window: tuple | None = None) -> dict[str, np.ndarray]:
         """Read bands, decoding each group that holds one of them once.
 
         Args:
@@ -208,14 +207,14 @@ class BandSource(ABC):
         missing = [b for b in bands if b not in group_of]
         if missing:
             raise KeyError(f"{self.name} source has no band(s) {missing}; it holds {self.bands}")
-        out: Dict[str, np.ndarray] = {}
+        out: dict[str, np.ndarray] = {}
         for group in dict.fromkeys(group_of[b] for b in bands):
             windows = {b: self.window(b, crop_window) for b in self.groups[group]}
             decoded = self._read_group(group, windows)
             out.update({b: a for b, a in decoded.items() if b in bands})
         return {b: out[b] for b in bands}
 
-    def describe(self) -> Dict[str, Any]:
+    def describe(self) -> dict[str, Any]:
         """Provenance of the representation, e.g. codec and level."""
         return {"reader": self.name}
 
@@ -226,22 +225,21 @@ class Jp2BandSource(BandSource):
     name = "jp2"
 
     def __init__(self, scene_directory: Path, locate):
-        """
-        Args:
-            scene_directory: The ``.SAFE`` directory.
-            locate: Callable ``(bands) -> {band: path}`` finding band images;
-                images are located only when first needed, so a product
-                missing some bands can still be read for the others.
+        """Args:
+        scene_directory: The ``.SAFE`` directory.
+        locate: Callable ``(bands) -> {band: path}`` finding band images;
+            images are located only when first needed, so a product
+            missing some bands can still be read for the others.
         """
         self.scene_directory = Path(scene_directory)
         self._locate = locate
-        self._paths: Dict[str, Path] = {}
-        self._georef: Optional[BandGeoref] = None
-        self._shapes: Dict[str, Tuple[int, int]] = {}
-        self._res: Dict[str, int] = {}
+        self._paths: dict[str, Path] = {}
+        self._georef: BandGeoref | None = None
+        self._shapes: dict[str, tuple[int, int]] = {}
+        self._res: dict[str, int] = {}
 
     @property
-    def groups(self) -> Dict[str, List[str]]:
+    def groups(self) -> dict[str, list[str]]:
         return {b: [b] for b in BANDS}
 
     def path(self, band: str) -> Path:
@@ -262,7 +260,7 @@ class Jp2BandSource(BandSource):
             self._open_meta("B02")
         return self._georef
 
-    def shape(self, band: str) -> Tuple[int, int]:
+    def shape(self, band: str) -> tuple[int, int]:
         if band not in self._shapes:
             self._open_meta(band)
         return self._shapes[band]
@@ -272,7 +270,7 @@ class Jp2BandSource(BandSource):
             self._open_meta(band)
         return self._res[band]
 
-    def _read_group(self, group: str, windows: Dict[str, Optional[Window]]) -> Dict[str, np.ndarray]:
+    def _read_group(self, group: str, windows: dict[str, Window | None]) -> dict[str, np.ndarray]:
         (band,) = self.groups[group]
         with rio.open(self.path(band)) as src:
             self._shapes[band] = (src.height, src.width)
@@ -280,7 +278,7 @@ class Jp2BandSource(BandSource):
             return {band: src.read(1, window=windows[band])}
 
 
-def read_manifest(scene_directory: Path) -> Optional[Dict[str, Any]]:
+def read_manifest(scene_directory: Path) -> dict[str, Any] | None:
     """The product's ``COMPRESSED.json``, or ``None`` for a standard product.
 
     Raises:
@@ -301,12 +299,12 @@ def read_manifest(scene_directory: Path) -> Optional[Dict[str, Any]]:
     return manifest
 
 
-def levels(manifest: Dict[str, Any]) -> List[str]:
+def levels(manifest: dict[str, Any]) -> list[str]:
     """The level names of a manifest (empty for a single-level one)."""
     return list(manifest.get("levels", {}))
 
 
-def resolve_level(manifest: Dict[str, Any], level: Optional[str] = None) -> Dict[str, Any]:
+def resolve_level(manifest: dict[str, Any], level: str | None = None) -> dict[str, Any]:
     """The manifest as seen by a reader for one level: the product-wide
     fields, overlaid with the level's own, plus ``level``.
 
@@ -335,7 +333,7 @@ def resolve_level(manifest: Dict[str, Any], level: Optional[str] = None) -> Dict
 
 
 def open_band_source(scene_directory: Path, band_paths=None,
-                     level: Optional[str] = None) -> BandSource:
+                     level: str | None = None) -> BandSource:
     """The band source of a product directory.
 
     Args:

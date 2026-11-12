@@ -38,9 +38,10 @@ from __future__ import annotations
 
 import os
 import zlib
+from collections.abc import Iterable
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
+from typing import Any
 
 import numpy as np
 from affine import Affine
@@ -64,14 +65,14 @@ def _imagecodecs(codec: str):
     return ic
 
 
-def _decode(ic, codec: str, blob: bytes, shape: Tuple[int, ...]) -> np.ndarray:
+def _decode(ic, codec: str, blob: bytes, shape: tuple[int, ...]) -> np.ndarray:
     if codec == "sz3":
         a = ic.sz3_decode(blob, shape=shape, dtype=np.float32)
         return np.clip(np.rint(a), 0, 65535).astype(np.uint16)
     return np.asarray(ic.jpegxl_decode(blob), np.uint16).reshape(shape)
 
 
-def _unpack(blob: bytes, shape: Tuple[int, int]) -> np.ndarray:
+def _unpack(blob: bytes, shape: tuple[int, int]) -> np.ndarray:
     bits = np.unpackbits(np.frombuffer(zlib.decompress(blob), np.uint8))
     return bits[: shape[0] * shape[1]].reshape(shape).astype(bool)
 
@@ -79,16 +80,16 @@ def _unpack(blob: bytes, shape: Tuple[int, int]) -> np.ndarray:
 class _Grid:
     """The tiling of one group's native grid."""
 
-    def __init__(self, shape: Tuple[int, int], tile_px: int):
+    def __init__(self, shape: tuple[int, int], tile_px: int):
         self.shape, self.tile_px = tuple(shape), int(tile_px)
         self.ny = -(-self.shape[0] // self.tile_px)
         self.nx = -(-self.shape[1] // self.tile_px)
 
-    def bounds(self, ty: int, tx: int) -> Tuple[int, int, int, int]:
+    def bounds(self, ty: int, tx: int) -> tuple[int, int, int, int]:
         t = self.tile_px
         return (ty * t, min((ty + 1) * t, self.shape[0]), tx * t, min((tx + 1) * t, self.shape[1]))
 
-    def tiles(self, r0: int, r1: int, c0: int, c1: int) -> Iterable[Tuple[int, int]]:
+    def tiles(self, r0: int, r1: int, c0: int, c1: int) -> Iterable[tuple[int, int]]:
         t = self.tile_px
         for ty in range(r0 // t, (r1 - 1) // t + 1):
             for tx in range(c0 // t, (c1 - 1) // t + 1):
@@ -98,7 +99,7 @@ class _Grid:
 class TiledBandSource(BandSource):
     """Tiled SZ3 or JPEG XL band data written by ``write_tiled_safe``."""
 
-    def __init__(self, scene_directory: Path, manifest: Dict[str, Any]):
+    def __init__(self, scene_directory: Path, manifest: dict[str, Any]):
         self.codec = manifest["codec"]["name"]
         if self.codec not in CODECS:
             raise ValueError(f"unknown tiled codec '{self.codec}'; known: {CODECS}")
@@ -117,7 +118,7 @@ class TiledBandSource(BandSource):
         self.n_workers = min(32, os.cpu_count() or 1)
 
     @property
-    def groups(self) -> Dict[str, List[str]]:
+    def groups(self) -> dict[str, list[str]]:
         if self.layout == "grouped":
             return {name: list(grp["bands"]) for name, grp in self._groups.items()}
         return {b: [b] for grp in self._groups.values() for b in grp["bands"]}
@@ -125,7 +126,7 @@ class TiledBandSource(BandSource):
     def georef(self) -> BandGeoref:
         return self._georef
 
-    def shape(self, band: str) -> Tuple[int, int]:
+    def shape(self, band: str) -> tuple[int, int]:
         return tuple(self._bands[band]["shape"])
 
     def native_resolution(self, band: str) -> int:
@@ -134,7 +135,7 @@ class TiledBandSource(BandSource):
     def _group_of(self, band: str) -> str:
         return next(n for n, grp in self._groups.items() if band in grp["bands"])
 
-    def _read_group(self, group: str, windows: Dict[str, Optional[Window]]) -> Dict[str, np.ndarray]:
+    def _read_group(self, group: str, windows: dict[str, Window | None]) -> dict[str, np.ndarray]:
         bands = self.groups[group]
         gname = self._group_of(bands[0])
         grp, grid = self._groups[gname], self._grids[gname]
@@ -184,7 +185,7 @@ class TiledBandSource(BandSource):
                     out[b][ys - r0:ye - r0, xs - c0:xe - c0] = t[ys - y0:ye - y0, xs - x0:xe - x0]
         return out
 
-    def describe(self) -> Dict[str, Any]:
+    def describe(self) -> dict[str, Any]:
         return {"reader": self.name, "codec": self.codec, "level": self.manifest.get("level"),
                 "layout": self.layout,
                 "params": self.params, "bits_per_pixel": self.manifest.get("bits_per_pixel")}
