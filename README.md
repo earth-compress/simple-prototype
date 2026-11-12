@@ -16,7 +16,7 @@ Requires uv to be installed: https://docs.astral.sh/uv/getting-started/installat
 
 We have two demos available. The first downloads compressed Sentinel-2 data, while the second downloads the data and processes it using [Clouds Decoded](https://asterisk.coop/project-pages/project-clouds-decoded.html).
 
-Both demos support GeoRVQ, JPEG XL and SZ3 compression formats.
+Both demos support GeoRVQ and JPEG XL compression formats.
 
 ## Download demo
 
@@ -34,7 +34,7 @@ This demo downloads a compressed Sentinel-2 dataset from Hugging Face. It shows 
       run(dataset_version=DatasetKey.JPEGXL)
    ```
 
-   Available formats are GEORVQ, JPEGXL and SZ3.
+   Available formats are GEORVQ and JPEGXL.
 
 3. Run the demo:
    ```bash
@@ -66,7 +66,7 @@ The terminal shows the download size, download time and processing time. The res
       )
    ```
 
-   Available formats are GEORVQ, JPEGXL and SZ3.
+   Available formats are GEORVQ and JPEGXL.
 
 3. You can also set a specific compression level:
    ```bash

@@ -24,7 +24,6 @@ class DatasetKey(StrEnum):
 
     GEORVQ = "georvq"
     JPEGXL = "jpegxl"
-    SZ3 = "sz3"
 
 
 class BaseDataset(BaseModel, abc.ABC):

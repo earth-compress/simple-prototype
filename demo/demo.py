@@ -28,7 +28,6 @@ class DatasetKey(StrEnum):
 
     GEORVQ = "georvq"
     JPEGXL = "jpegxl"
-    SZ3 = "sz3"
 
 
 def download_dataset(dataset_version: DatasetKey) -> Path:
@@ -65,11 +64,7 @@ DATASET_VERSIONS: dict[DatasetKey, DatasetVersion] = {
     DatasetKey.JPEGXL: DatasetVersion(
         download_method=lambda: download_dataset(DatasetKey.JPEGXL),
         description="JPEG XL compressed Sentinel-2 data",
-    ),
-    DatasetKey.SZ3: DatasetVersion(
-        download_method=lambda: download_dataset(DatasetKey.SZ3),
-        description="SZ3 compressed Sentinel-2 data",
-    ),
+    )
 }
 
 

@@ -12,8 +12,7 @@ from demo import DATASET_VERSIONS, DatasetKey, get_dir_size_bytes
 # Default compression level for each dataset type
 COMPRESSION_LEVELS: dict[DatasetKey, str] = {
     DatasetKey.GEORVQ: "8-4",
-    DatasetKey.JPEGXL: "d-0.17",
-    DatasetKey.SZ3: "abs-63",
+    DatasetKey.JPEGXL: "d-0.17"
 }
 
 
