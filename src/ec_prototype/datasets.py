@@ -27,7 +27,7 @@ class DatasetKey(StrEnum):
 
 
 class BaseDataset(BaseModel, abc.ABC):
-    """The base dataset model."""
+    """Abstract base class for Datasets."""
 
     description: str
     path: Path | None = None
@@ -35,29 +35,36 @@ class BaseDataset(BaseModel, abc.ABC):
 
     @abc.abstractmethod
     def download(self):
-        """Base class download method."""
+        """Method to download the dataset."""
         pass
 
     @abc.abstractmethod
-    def decode(self, device: str | None = None, quality: str | None = None):
-        """Base class decode method."""
+    def decode(self, device: str | None = None):
+        """Method to decode the dataset."""
         pass
 
 
 class GeorvqDataset(BaseDataset):
-    """GEORVQ dataset class."""
+    """Class for GEORVQ Compressed datasets."""
 
     def download(self):
-        """Download method for GEORVQ."""
+        """Download the GEORVQ dataset."""
         self.path = download_dataset(DatasetKey.GEORVQ)
 
     def decode(self, device: str | None = None, quality: str | None = None):
-        """Decode method for GEORVQ."""
+        """Decode the dataset.
+
+        Args:
+            device (str | None, optional): Compute device, ('cuda', 'cpu', 'mps', or None=auto).
+            quality (str | None, optional): Quality level to decompress to, e.g. "8-4".
+                                            Will use codec's default if not provided.
+        """
         if not self.path:
             raise Exception("No path set, call download() on the dataset first!")
-        _bands, _grids = decode_georvq(self.path, device=device, quality=quality)
-        self.bands = _bands
-        return _grids
+        manifest = json.loads((self.path / "COMPRESSED.json").read_text())
+        ds = georvq.open(self.path / manifest["store"], device=device, bf16=bool(manifest.get("bf16", False)))
+        self.bands = ds.descriptions
+        return ds.read_grids(quality=quality)
 
 
 class JpegxlDataset(BaseDataset):
@@ -100,22 +107,6 @@ def download_dataset(dataset_version: DatasetKey) -> Path:
         raise FileNotFoundError(f"Compressed SAFE file not found: {scene_path}")
 
     return scene_path
-
-
-def decode_georvq(scene_path: Path, device: str | None = None, quality: str | None = None) -> tuple[tuple, dict]:
-    """Decode a GEORVQ compressed Sentinel-2 SAFE file.
-
-    Args:
-        scene_path (Path): Path to the compressed Sentinel-2 SAFE directory.
-        device (str | None, optional): Device used for decoding.
-        quality (str | None, optional): The compression quality level to decode.
-
-    Returns:
-        tuple[tuple, dict]: The band descriptions and decoded image grids.
-    """
-    manifest = json.loads((scene_path / "COMPRESSED.json").read_text())
-    ds = georvq.open(scene_path / manifest["store"], device=device, bf16=bool(manifest.get("bf16", False)))
-    return ds.descriptions, ds.read_grids(quality=quality)
 
 
 def decode_tiled(scene_path: Path, level: str | None = None) -> tuple[tuple, dict]:
