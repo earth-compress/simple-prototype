@@ -1,7 +1,7 @@
 """Where a scene's band images come from.
 
 Adapted from Clouds Decoded: https://github.com/asterisk-labs/clouds-decoded
-https://github.com/asterisk-labs/clouds-decoded/blob/compressed-readers/src/shared_utils/data/band_source.py
+https://github.com/asterisk-labs/clouds-decoded/commit/d686bd9a7709f1e91ed748c47f4e961146d3eef7#diff-64dd26892b3d120ee1ea9a9090c68733b8110a9a2cf48e4b41a5f67875f72b23
 
 The decode functionality has been used in this demo.
 
