@@ -30,6 +30,7 @@ clouds-decoded dependencies (``georvq``, ``imagecodecs``). They are
 imported only when a product that needs them is read, and a missing one
 raises an ``ImportError`` that says what to install.
 """
+
 from __future__ import annotations
 
 import importlib
@@ -47,10 +48,7 @@ from rasterio.windows import Window
 
 logger = logging.getLogger(__name__)
 
-BANDS = [
-    "B01", "B02", "B03", "B04", "B05", "B06", "B07",
-    "B08", "B8A", "B09", "B10", "B11", "B12"
-]
+BANDS = ["B01", "B02", "B03", "B04", "B05", "B06", "B07", "B08", "B8A", "B09", "B10", "B11", "B12"]
 
 MANIFEST_NAME = "COMPRESSED.json"
 MANIFEST_FORMAT = "clouds-decoded-compressed"
@@ -225,11 +223,13 @@ class Jp2BandSource(BandSource):
     name = "jp2"
 
     def __init__(self, scene_directory: Path, locate):
-        """Args:
-        scene_directory: The ``.SAFE`` directory.
-        locate: Callable ``(bands) -> {band: path}`` finding band images;
-            images are located only when first needed, so a product
-            missing some bands can still be read for the others.
+        """Initialisation method.
+
+        Args:
+            scene_directory: The ``.SAFE`` directory.
+            locate: Callable ``(bands) -> {band: path}`` finding band images;
+                images are located only when first needed, so a product
+                missing some bands can still be read for the others.
         """
         self.scene_directory = Path(scene_directory)
         self._locate = locate
@@ -240,9 +240,11 @@ class Jp2BandSource(BandSource):
 
     @property
     def groups(self) -> dict[str, list[str]]:
+        """Decode units: group name -> the bands decoded together."""
         return {b: [b] for b in BANDS}
 
     def path(self, band: str) -> Path:
+        """Retrieve the path."""
         if band not in self._paths:
             self._paths.update(self._locate([band]))
         return self._paths[band]
@@ -256,16 +258,19 @@ class Jp2BandSource(BandSource):
                 self._georef = BandGeoref(src.crs, src.transform, src.width, src.height)
 
     def georef(self) -> BandGeoref:
+        """CRS, transform and size of the full product's B02 grid."""
         if self._georef is None:
             self._open_meta("B02")
         return self._georef
 
     def shape(self, band: str) -> tuple[int, int]:
+        """``(height, width)`` of a band's full native grid."""
         if band not in self._shapes:
             self._open_meta(band)
         return self._shapes[band]
 
     def native_resolution(self, band: str) -> int:
+        """Actual pixel size of a band in metres, from its grid size."""
         if band not in self._res:
             self._open_meta(band)
         return self._res[band]
@@ -295,7 +300,8 @@ def read_manifest(scene_directory: Path) -> dict[str, Any] | None:
     if int(manifest.get("version", 0)) > MANIFEST_VERSION:
         raise ValueError(
             f"{path} is manifest version {manifest['version']}; this clouds-decoded "
-            f"reads up to version {MANIFEST_VERSION}")
+            f"reads up to version {MANIFEST_VERSION}"
+        )
     return manifest
 
 
@@ -317,11 +323,10 @@ def resolve_level(manifest: dict[str, Any], level: str | None = None) -> dict[st
 
     Raises:
         ValueError: If the level is not in the manifest.
-    """
+    """  # ruff: ignore[missing-blank-line-after-summary]
     if "levels" not in manifest:
         if level is not None and level != manifest.get("level"):
-            raise ValueError(f"product has a single level ({manifest.get('level')}); "
-                             f"cannot read level '{level}'")
+            raise ValueError(f"product has a single level ({manifest.get('level')}); cannot read level '{level}'")
         return manifest
     name = manifest.get("default") if level is None else level
     if name not in manifest["levels"]:
@@ -332,8 +337,7 @@ def resolve_level(manifest: dict[str, Any], level: str | None = None) -> dict[st
     return out
 
 
-def open_band_source(scene_directory: Path, band_paths=None,
-                     level: str | None = None) -> BandSource:
+def open_band_source(scene_directory: Path, band_paths=None, level: str | None = None) -> BandSource:
     """The band source of a product directory.
 
     Args:
@@ -356,17 +360,15 @@ def open_band_source(scene_directory: Path, band_paths=None,
     manifest = read_manifest(scene_directory)
     if manifest is None:
         if level is not None:
-            raise ValueError(f"{scene_directory.name} is not a compressed product; "
-                             f"it has no level '{level}'")
+            raise ValueError(f"{scene_directory.name} is not a compressed product; it has no level '{level}'")
         return Jp2BandSource(scene_directory, band_paths)
     manifest = resolve_level(manifest, level)
     reader = manifest.get("reader")
     if reader not in READERS:
         raise ValueError(
-            f"{scene_directory / MANIFEST_NAME} names reader '{reader}'; "
-            f"known readers are {sorted(READERS)}")
+            f"{scene_directory / MANIFEST_NAME} names reader '{reader}'; known readers are {sorted(READERS)}"
+        )
     module, cls = READERS[reader].split(":")
     source = getattr(importlib.import_module(module), cls)(scene_directory, manifest)
-    logger.info("Reading %s band images through the %s reader (%s)",
-                scene_directory.name, reader, source.describe())
+    logger.info("Reading %s band images through the %s reader (%s)", scene_directory.name, reader, source.describe())
     return source

@@ -18,6 +18,7 @@ SAMPLE_NAME = "S2A_MSIL1C_20170720T045701_N0500_R119_T44PNB_20230831T180106.SAFE
 
 DATA_DIR = Path("data")
 
+
 class DatasetKey(StrEnum):
     """Enum holding keys for each of the dataset versions."""
 
@@ -27,23 +28,32 @@ class DatasetKey(StrEnum):
 
 
 class BaseDataset(BaseModel, abc.ABC):
+    """The base dataset model."""
+
     description: str
     path: Path | None = None
     bands: tuple | None = None
 
     @abc.abstractmethod
     def download(self):
+        """Base class download method."""
         pass
 
     @abc.abstractmethod
     def decode(self, device: str | None = None, quality: str | None = None):
+        """Base class decode method."""
         pass
 
+
 class GeorvqDataset(BaseDataset):
+    """GEORVQ dataset class."""
+
     def download(self):
+        """Download method for GEORVQ."""
         self.path = download_dataset(DatasetKey.GEORVQ)
 
     def decode(self, device: str | None = None, quality: str | None = None):
+        """Decode method for GEORVQ."""
         if not self.path:
             raise Exception("No path set, call download() on the dataset first!")
         _bands, _grids = decode_georvq(self.path, device=device, quality=quality)
@@ -52,22 +62,14 @@ class GeorvqDataset(BaseDataset):
 
 
 class JpegxlDataset(BaseDataset):
+    """JPEXGL dataset class."""
+
     def download(self):
+        """Download method for JPEGXL."""
         self.path = download_dataset(DatasetKey.JPEGXL)
 
     def decode(self, device: str | None = None, quality: str | None = None):
-        if not self.path:
-            raise Exception("No path set, call download() on the dataset first!")
-        _bands, _grids = decode_tiled(self.path, level=quality)
-        self.bands = _bands
-        return _grids
-
-
-class Sz3Dataset(BaseDataset):
-    def download(self):
-        self.path = download_dataset(DatasetKey.SZ3)
-
-    def decode(self, device: str | None = None, quality: str | None = None):
+        """Decode method for JPEGXL."""
         if not self.path:
             raise Exception("No path set, call download() on the dataset first!")
         _bands, _grids = decode_tiled(self.path, level=quality)
@@ -102,17 +104,31 @@ def download_dataset(dataset_version: DatasetKey) -> Path:
 
 
 def decode_georvq(scene_path: Path, device: str | None = None, quality: str | None = None) -> tuple[tuple, dict]:
+    """Decode a GEORVQ compressed Sentinel-2 SAFE file.
+
+    Args:
+        scene_path (Path): Path to the compressed Sentinel-2 SAFE directory.
+        device (str | None, optional): Device used for decoding.
+        quality (str | None, optional): The compression quality level to decode.
+
+    Returns:
+        tuple[tuple, dict]: The band descriptions and decoded image grids.
+    """
     manifest = json.loads((scene_path / "COMPRESSED.json").read_text())
-    ds = georvq.open(
-        scene_path / manifest["store"],
-        device=device,
-        bf16=bool(manifest.get("bf16", False))
-    )
+    ds = georvq.open(scene_path / manifest["store"], device=device, bf16=bool(manifest.get("bf16", False)))
     return ds.descriptions, ds.read_grids(quality=quality)
 
 
 def decode_tiled(scene_path: Path, level: str | None = None) -> tuple[tuple, dict]:
-    """Decode a JPEG XL or SZ3 compressed Sentinel-2 SAFE file."""
+    """Decode a JPEG XL or SZ3 compressed Sentinel-2 SAFE file.
+
+    Args:
+        scene_path (Path): Path to the compressed Sentinel-2 SAFE directory.
+        level (str | None, optional): The compression level to decode.
+
+    Returns:
+        tuple[tuple, dict]: The band names and decoded image grids.
+    """
     source = open_band_source(scene_path, level=level)
 
     if source.name not in ("jpegxl", "sz3"):
@@ -138,10 +154,5 @@ DATASETS: dict[DatasetKey, BaseDataset] = {
     DatasetKey.GEORVQ: GeorvqDataset(
         description="GeoRVQ compressed Sentinel-2 data",
     ),
-    DatasetKey.JPEGXL: JpegxlDataset(
-        description="JPEG XL compressed Sentinel-2 data"
-    ),
-    DatasetKey.SZ3: Sz3Dataset(
-        description="SZ3 compressed Sentinel-2 data",
-    )
+    DatasetKey.JPEGXL: JpegxlDataset(description="JPEG XL compressed Sentinel-2 data"),
 }

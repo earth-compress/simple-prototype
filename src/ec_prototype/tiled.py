@@ -34,6 +34,7 @@ Codec parameters, as in ``imagecodecs``:
 - ``jpegxl``: ``distance`` (Butteraugli distance; 0 codes losslessly) and
   ``effort`` (1-10, default 7).
 """
+
 from __future__ import annotations
 
 import os
@@ -53,12 +54,13 @@ from ec_prototype.band_source import BandGeoref, BandSource, require_optional
 CODECS = ("sz3", "jpegxl")
 LAYOUTS = ("separate", "grouped")
 DEFAULT_TILE = 1098  # B02 pixels; 10 x 10 tiles per product, 549 px at 20 m, 183 px at 60 m
-_JOINT = "*"         # index key of a grouped blob
+_JOINT = "*"  # index key of a grouped blob
 
 
 def _imagecodecs(codec: str):
-    ic = require_optional("imagecodecs", f"read and write {codec}-compressed Sentinel-2 bands",
-                          "pip install imagecodecs")
+    ic = require_optional(
+        "imagecodecs", f"read and write {codec}-compressed Sentinel-2 bands", "pip install imagecodecs"
+    )
     available = {"sz3": ic.SZ3.available, "jpegxl": ic.JPEGXL.available}[codec]
     if not available:
         raise ImportError(f"this imagecodecs build ({ic.__version__}) has no {codec} codec")
@@ -100,6 +102,7 @@ class TiledBandSource(BandSource):
     """Tiled SZ3 or JPEG XL band data written by ``write_tiled_safe``."""
 
     def __init__(self, scene_directory: Path, manifest: dict[str, Any]):
+        """Initialisation method."""
         self.codec = manifest["codec"]["name"]
         if self.codec not in CODECS:
             raise ValueError(f"unknown tiled codec '{self.codec}'; known: {CODECS}")
@@ -109,8 +112,7 @@ class TiledBandSource(BandSource):
         self._ic = _imagecodecs(self.codec)
         self.root = Path(scene_directory)
         g = manifest["georef"]
-        self._georef = BandGeoref(CRS.from_wkt(g["crs"]), Affine(*g["transform"]),
-                                  int(g["width"]), int(g["height"]))
+        self._georef = BandGeoref(CRS.from_wkt(g["crs"]), Affine(*g["transform"]), int(g["width"]), int(g["height"]))
         self._bands = manifest["bands"]
         self._groups = manifest["groups"]
         self._grids = {name: _Grid(grp["shape"], grp["tile_px"]) for name, grp in self._groups.items()}
@@ -119,23 +121,28 @@ class TiledBandSource(BandSource):
 
     @property
     def groups(self) -> dict[str, list[str]]:
+        """Decode units: group name -> the bands decoded together."""
         if self.layout == "grouped":
             return {name: list(grp["bands"]) for name, grp in self._groups.items()}
         return {b: [b] for grp in self._groups.values() for b in grp["bands"]}
 
     def georef(self) -> BandGeoref:
+        """CRS, transform and size of the full product's B02 grid."""
         return self._georef
 
     def shape(self, band: str) -> tuple[int, int]:
+        """``(height, width)`` of a band's full native grid."""
         return tuple(self._bands[band]["shape"])
 
     def native_resolution(self, band: str) -> int:
+        """Actual pixel size of a band in metres, from its grid size."""
         return int(self._bands[band]["res"])
 
     def _group_of(self, band: str) -> str:
         return next(n for n, grp in self._groups.items() if band in grp["bands"])
 
-    def _read_group(self, group: str, windows: dict[str, Window | None]) -> dict[str, np.ndarray]:
+    def _read_group(self, group: str, windows: dict[str, Window | None]) -> dict[str, np.ndarray]:  # ruff: ignore[complex-structure]
+        """Decode one group."""
         bands = self.groups[group]
         gname = self._group_of(bands[0])
         grp, grid = self._groups[gname], self._grids[gname]
@@ -147,9 +154,11 @@ class TiledBandSource(BandSource):
             r1, c1 = r0 + int(w.height), c0 + int(w.width)
         out = {b: np.zeros((r1 - r0, c1 - c0), np.uint16) for b in bands}
         with open(self.root / grp["file"], "rb") as f:
+
             def fetch(entry):
                 f.seek(entry[0])
                 return f.read(entry[1])
+
             jobs = []
             for ty, tx in grid.tiles(r0, r1, c0, c1):
                 idx = grp["index"].get(f"{ty}_{tx}", {})
@@ -162,7 +171,7 @@ class TiledBandSource(BandSource):
             shape = (y1 - y0, x1 - x0)
             if _JOINT in blobs:
                 stack = _decode(self._ic, self.codec, blobs[_JOINT], (len(grp["bands"]),) + shape)
-                tiles = dict(zip(grp["bands"], stack))
+                tiles = dict(zip(grp["bands"], stack))  # ruff: ignore[zip-without-explicit-strict]
             else:
                 tiles = {b: _decode(self._ic, self.codec, blobs[b], shape) for b in bands if b in blobs}
             res = {}
@@ -182,10 +191,16 @@ class TiledBandSource(BandSource):
                 ys, ye = max(y0, r0), min(y1, r1)
                 xs, xe = max(x0, c0), min(x1, c1)
                 for b, t in res.items():
-                    out[b][ys - r0:ye - r0, xs - c0:xe - c0] = t[ys - y0:ye - y0, xs - x0:xe - x0]
+                    out[b][ys - r0 : ye - r0, xs - c0 : xe - c0] = t[ys - y0 : ye - y0, xs - x0 : xe - x0]
         return out
 
     def describe(self) -> dict[str, Any]:
-        return {"reader": self.name, "codec": self.codec, "level": self.manifest.get("level"),
-                "layout": self.layout,
-                "params": self.params, "bits_per_pixel": self.manifest.get("bits_per_pixel")}
+        """Provenance of the representation, e.g. codec and level."""
+        return {
+            "reader": self.name,
+            "codec": self.codec,
+            "level": self.manifest.get("level"),
+            "layout": self.layout,
+            "params": self.params,
+            "bits_per_pixel": self.manifest.get("bits_per_pixel"),
+        }
