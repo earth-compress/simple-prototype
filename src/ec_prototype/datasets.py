@@ -90,7 +90,7 @@ def download_dataset(dataset_version: DatasetKey, force_download: bool = False) 
 
     Args:
         dataset_version (DatasetKey): Enum item identifying the dataset to be run against.
-        force_download (bool): Download files again even if already stored locally.
+        force_download (bool): Download the file again, regardless if it's already stored locally.
 
     Returns:
         path (Path): Path of the directory to analyse.
