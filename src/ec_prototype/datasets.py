@@ -35,7 +35,7 @@ class BaseDataset(BaseModel, abc.ABC):
     bands: tuple | None = None
 
     @abc.abstractmethod
-    def download(self) -> Path:
+    def download(self, force_download: bool = False) -> Path:
         """Method to download the dataset. Returns the path of the downloaded asset."""
         pass
 
@@ -48,9 +48,9 @@ class BaseDataset(BaseModel, abc.ABC):
 class GeorvqDataset(BaseDataset):
     """Class for GEORVQ Compressed datasets."""
 
-    def download(self):
+    def download(self, force_download: bool = False):
         """Download the GEORVQ dataset."""
-        self.path = download_dataset(DatasetKey.GEORVQ)
+        self.path = download_dataset(DatasetKey.GEORVQ, force_download=force_download)
         return self.path
 
     def decode(self, device: str | None = None, quality: str | None = None):
@@ -72,9 +72,9 @@ class GeorvqDataset(BaseDataset):
 class JpegxlDataset(BaseDataset):
     """JPEXGL dataset class."""
 
-    def download(self):
+    def download(self, force_download: bool = False):
         """Download method for JPEGXL."""
-        self.path = download_dataset(DatasetKey.JPEGXL)
+        self.path = download_dataset(DatasetKey.JPEGXL, force_download=force_download)
 
     def decode(self, device: str | None = None, quality: str | None = None):
         """Decode method for JPEGXL."""
@@ -85,11 +85,12 @@ class JpegxlDataset(BaseDataset):
         return _grids
 
 
-def download_dataset(dataset_version: DatasetKey) -> Path:
+def download_dataset(dataset_version: DatasetKey, force_download: bool = False) -> Path:
     """Download a compressed Sentinel-2 SAFE product.
 
     Args:
         dataset_version (DatasetKey): Enum item identifying the dataset to be run against.
+        force_download (bool): Download the file again, regardless if it's already stored locally.
 
     Returns:
         path (Path): Path of the directory to analyse.
@@ -101,6 +102,7 @@ def download_dataset(dataset_version: DatasetKey) -> Path:
         repo_type="dataset",
         local_dir=DATA_DIR,
         allow_patterns=[f"{relative_path}/**"],
+        force_download=force_download
     )
 
     scene_path = DATA_DIR / relative_path
