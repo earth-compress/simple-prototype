@@ -1,3 +1,7 @@
+<p>
+  <img src="assets/earth_compress_logo.svg" alt="Project Logo" width="400">
+</p>
+
 # Earth Compress Prototype
 
 This is an early, fairly simple prototype to demonstrate what Earth Compress can offer in an end-to-end workflow.
@@ -5,6 +9,16 @@ This is an early, fairly simple prototype to demonstrate what Earth Compress can
 The **ec_prototype** package provides a clean interface for downloading and decoding datasets compressed under different sample algorithms.
 
 A notebook is also provided to demonstrate this in use.
+
+---
+
+## What is Earth Compress?
+
+Earth Compress is a three-year project funded by the [Advanced Research and Invention Agency (ARIA)](https://aria.org.uk/), led by the [National Oceanography Centre](https://www.noc.ac.uk/) and [Asterisk Labs](https://asterisk.coop/) to 'put petabytes of environmental data in everyone's pocket'. 
+
+The project will create AI software tools and infrastructure that enable any user, from a student on a laptop to a national meteorological agency, to work with entire environmental archives that currently require enormous computing resources and budgets. 
+
+To hear more about the project, read [ARIA’s announcement](https://aria.org.uk/insights/2026/doubling-down-on-earth-scale-data).
 
 ---
 
@@ -53,3 +67,26 @@ Run the formatter with:
 ```bash
 uv run ruff format
 ```
+
+---
+
+# Project partners
+
+The Earth Compress project is developed in collaboration with:
+
+<p>
+  <a href="https://aria.org.uk/">
+    <img src="assets/aria_logo.svg"
+         alt="Advanced Research and Invention Agency (ARIA)" height="60">
+  </a>
+  &nbsp;&nbsp;&nbsp;
+  <a href="https://noc.ac.uk">
+    <img src="assets/noc_logo.svg"
+         alt="The National Oceanography Centre" height="60">
+  </a>
+  &nbsp;&nbsp;&nbsp;
+  <a href="https://asterisk.coop/">
+    <img src="assets/asterisk_labs_logo.svg"
+         alt="Asterisk Labs" height="60">
+  </a>
+</p>
