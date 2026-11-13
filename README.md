@@ -52,7 +52,7 @@ For further details, see the [notebook](test.ipynb) file at the root of this rep
 
 Requires [uv](https://docs.astral.sh/uv/getting-started/installation/) to be installed.
 
-To install necessary dependencies run: 
+To install the necessary dependencies run: 
 ```
 uv sync --group demo
 ```
