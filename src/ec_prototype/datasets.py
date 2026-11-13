@@ -15,7 +15,7 @@ from ec_prototype.compressed.band_source import open_band_source
 
 REPO_ID = "earth-compress/EC-prototype-S2L1C"
 
-SAMPLE_NAME = "S2A_MSIL1C_20170720T045701_N0500_R119_T44PNB_20230831T180106.SAFE"
+SAMPLE_NAME = "S2A_MSIL1C_20171207T050201_N0500_R119_T44PNB_20230806T101942.SAFE"
 
 DATA_DIR = Path("data")
 
