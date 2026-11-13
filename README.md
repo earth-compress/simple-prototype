@@ -30,7 +30,7 @@ Install the ec_prototype directly from GitHub using pip:
 
 ## Example usage
 
-This package provides an example for downloading and decoding compressed Sentinel-2 SAFE files.
+This package demonstrates downloading and decoding compressed Sentinel-2 SAFE files.
 
 ```
 # Select the compression format, GEORVQ or JPEGXL:
