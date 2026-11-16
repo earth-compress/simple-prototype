@@ -12,6 +12,7 @@ from huggingface_hub import snapshot_download
 from pydantic import BaseModel
 
 from ec_prototype.compressed.band_source import open_band_source
+from ec_prototype.utils import get_default_device
 
 REPO_ID = "earth-compress/EC-prototype-S2L1C"
 
@@ -64,6 +65,7 @@ class GeorvqDataset(BaseDataset):
         if not self.path:
             raise Exception("No path set, call download() on the dataset first!")
         manifest = json.loads((self.path / "COMPRESSED.json").read_text())
+        device = device or get_default_device()
         ds = georvq.open(self.path / manifest["store"], device=device, bf16=bool(manifest.get("bf16", False)))
         self.bands = ds.descriptions
         return ds.read_grids(quality=quality)
