@@ -26,7 +26,7 @@ To hear more about the project, read [ARIA’s announcement](https://aria.org.uk
 
 Install the ec_prototype directly from GitHub using pip:
 
-`pip install pip install git+https://github.com/earth-compress/simple-prototype.git`
+`pip install git+https://github.com/earth-compress/simple-prototype.git`
 
 ## Example usage
 
